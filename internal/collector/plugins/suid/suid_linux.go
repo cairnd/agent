@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/monjiapawne/cairn/internal/collector"
-	"github.com/monjiapawne/cairn/internal/collector/plugins"
+	"github.com/carind/agent/internal/collector"
+	"github.com/carind/agent/internal/collector/plugins"
 )
 
 type config struct {
@@ -62,7 +62,7 @@ func collect(cfg config) (collector.Entries, error) {
 				}
 				e := collector.Entry{
 					Key: path,
-					Fingerprint: collector.Fingerprint(
+					Fingerprint: plugins.Fingerprint(
 						sf.Contents,
 						sf.Perm,
 						strconv.FormatUint(uint64(uid), 10),

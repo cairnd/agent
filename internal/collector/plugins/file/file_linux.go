@@ -4,8 +4,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/monjiapawne/cairn/internal/collector"
-	"github.com/monjiapawne/cairn/internal/collector/plugins"
+	"github.com/carind/agent/internal/collector"
+	"github.com/carind/agent/internal/collector/plugins"
 )
 
 type Config struct {
@@ -49,7 +49,7 @@ func collect(c Config) (collector.Entries, error) {
 
 		e := collector.Entry{
 			Key:         fp,
-			Fingerprint: collector.Fingerprint(f.Perms, f.Contents),
+			Fingerprint: plugins.Fingerprint(f.Perms, f.Contents),
 			Snapshot:    f,
 		}
 		if contentsErr != nil {

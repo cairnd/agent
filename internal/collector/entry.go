@@ -1,10 +1,5 @@
 package collector
 
-import (
-	"crypto/sha256"
-	"encoding/hex"
-)
-
 // Entries is a collection from a single plugin
 type Entries []Entry
 
@@ -21,12 +16,4 @@ type Entry struct {
 	Snapshot any `json:"artifact"`
 	// Error signifies there was an error processing a key.
 	Error string `json:"error,omitzero"`
-}
-
-func Fingerprint(parts ...string) string {
-	h := sha256.New()
-	for _, p := range parts {
-		h.Write([]byte(p))
-	}
-	return hex.EncodeToString(h.Sum(nil))
 }
