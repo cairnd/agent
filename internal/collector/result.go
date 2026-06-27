@@ -1,11 +1,9 @@
 package collector
 
-import "encoding/json"
-
 type Results []Result
 
 type Result struct {
-	Plugin Plugin
-	Data   json.RawMessage
-	Err    error
+	Plugin  PluginInfo `json:"plugin"`
+	Entries Entries    `json:"entries"`
+	Error   error      `json:"error,omitempty,omitzero"`
 }

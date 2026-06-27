@@ -11,24 +11,30 @@ import (
 	"github.com/monjiapawne/cairn/internal/collector/plugins"
 )
 
+type config struct {
+	Roots []string `json:"roots"`
+}
+
 func init() {
 	collector.Register(
-		collector.Plugin{
+		collector.PluginInfo{
 			Name:        "SUID",
 			Description: "checks for setuid binaries and scripts",
 		},
-		Config{
+		config{
 			Roots: []string{"/usr/bin"},
 		},
 		collect,
 	)
 }
 
-type Config struct {
-	Roots []string `json:"roots"`
+type suidFile struct {
+	Perm     string `json:"perm"`
+	Contents string `json:"contents"`
+	UID      uint32 `json:"UID"`
 }
 
-func collect(cfg Config) (collector.Entries, error) {
+func collect(cfg config) (collector.Entries, error) {
 	entries := collector.Entries{}
 	for _, root := range cfg.Roots {
 		filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
@@ -46,32 +52,31 @@ func collect(cfg Config) (collector.Entries, error) {
 					uid = stat.Uid
 				}
 
-				entry := suidFile{
-					Path:   path,
-					Perm:   info.Mode().String(),
-					Sha256: plugins.HashFile(path),
-					UID:    uid,
-				}
+				// Use error in entry
+				contents, contentsErr := plugins.HashFile(path)
 
-				entries = append(entries, collector.Entry{
+				sf := suidFile{
+					Perm:     info.Mode().String(),
+					Contents: contents,
+					UID:      uid,
+				}
+				e := collector.Entry{
 					Key: path,
 					Fingerprint: collector.Fingerprint(
-						entry.Sha256,
-						entry.Perm,
+						sf.Contents,
+						sf.Perm,
 						strconv.FormatUint(uint64(uid), 10),
 					),
-					Raw: entry,
-				})
+					Snapshot: sf,
+				}
+				if contentsErr != nil {
+					e.Error = contentsErr.Error()
+				}
+
+				entries = append(entries, e)
 			}
 			return nil
 		})
 	}
 	return entries, nil
-}
-
-type suidFile struct {
-	Path   string `json:"path"`
-	Perm   string `json:"perm"`
-	Sha256 string `json:"sha256"`
-	UID    uint32 `json:"UID"`
 }
