@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func hashFile(path string) string {
+func HashFile(path string) string {
 	f, err := os.Open(path)
 	if err != nil {
 		return ""
