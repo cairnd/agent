@@ -2,12 +2,11 @@ package users
 
 import (
 	"bufio"
-	"fmt"
 	"os"
-	"strings"
 
 	"github.com/carind/agent/internal/collector"
-	"github.com/carind/agent/internal/collector/plugins"
+	"github.com/carind/agent/internal/collector/plugins/internal/linux/group"
+	"github.com/carind/agent/internal/collector/plugins/internal/linux/passwd"
 )
 
 type config struct {
@@ -24,73 +23,33 @@ func init() {
 	)
 }
 
-const usersPath = "/etc/passwd"
-const groupsPath = "/etc/groups"
-
 func collect(c config) (collector.Entries, error) {
-	entries := collector.Entries{}
-
-	f, err := os.Open(usersPath)
+	uf, err := os.Open(passwd.PasswdDefaultPath)
 	if err != nil {
-		return entries, err
+		return nil, err
 	}
-	defer f.Close()
+	defer uf.Close()
 
-	scanner := bufio.NewScanner(f)
+	// Users
+	users := []passwd.Passwd{}
+	scanner := bufio.NewScanner(uf)
 	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" || strings.HasPrefix(line, "#") {
+		u, ok := passwd.ParseLine(scanner.Text())
+		if !ok {
 			continue
 		}
-
-		u, err := parsePasswdLine(line)
-		if err != nil {
-			// completely skip not even a possible key from a corrupt line
-			continue
-		}
-
-		e := collector.Entry{
-			Key: u.UID,
-			Fingerprint: plugins.Fingerprint(
-				u.Username,
-				u.HomeDir,
-				// TODO: check group membership, finger print groups
-			),
-			Snapshot: u,
-		}
-		entries = append(entries, e)
+		users = append(users, u)
 	}
 	if err := scanner.Err(); err != nil {
-		return entries, err
+		return nil, err
 	}
 
-	return entries, nil
-}
-
-// USERNAME:PASSWORD:UID:GID:GECOS:HOME_DIR:SHELL
-// guest:x:1001:1001:guest,,,:/home/guest:/bin/bash
-type passwd struct {
-	Username string
-	Password string
-	UID      string
-	GID      string
-	Geocos   string
-	HomeDir  string
-	Shell    string
-}
-
-func parsePasswdLine(line string) (passwd, error) {
-	parts := strings.Split(line, ":")
-	if len(parts) > 7 {
-		return passwd{}, fmt.Errorf("malformed passwd line")
+	groups, err := group.ParseGroupFile(group.GroupDefaultPath)
+	if err != nil {
+		// We don't need to quit here..
+		return nil, err
 	}
-	return passwd{
-		Username: parts[0],
-		Password: parts[1],
-		UID:      parts[2],
-		GID:      parts[3],
-		Geocos:   parts[4],
-		HomeDir:  parts[5],
-		Shell:    parts[6],
-	}, nil
+	_ = groups
+
+	return nil, nil
 }
