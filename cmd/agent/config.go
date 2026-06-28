@@ -8,5 +8,8 @@ import (
 
 func getCollectorConfig() collector.Config {
 	// should later read from file
-	return collector.NewConfig(map[string]json.RawMessage{}, []string{"file", "suid"})
+	enabledPlugins := []string{
+		"users",
+	}
+	return collector.NewConfig(map[string]json.RawMessage{}, enabledPlugins)
 }
