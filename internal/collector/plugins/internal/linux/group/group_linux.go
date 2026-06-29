@@ -9,7 +9,7 @@ import (
 const GroupDefaultPath = "/etc/group"
 
 // NAME PW OR PLACEHOLDER GID LIST OF MEMBERS
-// mj:x:1000:
+// admins:x:1004:mj,max
 type Group struct {
 	Name     string
 	Password string // place holder (x) likely ignore
