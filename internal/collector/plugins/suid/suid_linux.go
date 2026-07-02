@@ -16,6 +16,7 @@ type config struct {
 }
 
 func init() {
+	var s suidFile
 	collector.Register(
 		collector.PluginInfo{
 			Name:        "SUID",
@@ -25,6 +26,14 @@ func init() {
 			Roots: []string{"/usr/bin"},
 		},
 		collect,
+		collector.NewSpec(&s,
+			collector.Field(&s.Perm, collector.Rules{
+				Changed: "permissions for {key} changed from {old} to {new}",
+				Higher:  "permissions for {key} are more permissive ({old} > {new})",
+				Lower:   "permissions for {key} are less permissive ({old} > {new})",
+			}),
+			collector.Field(&s.Contents, collector.Rules{Changed: "contents of {key} were modified"}),
+		),
 	)
 }
 

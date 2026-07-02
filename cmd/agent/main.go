@@ -12,8 +12,11 @@ import (
 )
 
 func main() {
-	res := collector.CollectAll(getCollectorConfig())
+	manifests := collector.Manifests()
+	j, _ := json.MarshalIndent(manifests, "", " ")
+	fmt.Println(string(j))
 
-	j, _ := json.MarshalIndent(res, "", " ")
+	res := collector.CollectAll(getCollectorConfig())
+	j, _ = json.MarshalIndent(res, "", " ")
 	fmt.Println(string(j))
 }

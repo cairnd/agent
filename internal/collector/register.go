@@ -9,6 +9,7 @@ type CollectFunc func(raw json.RawMessage) (Entries, error)
 type registration struct {
 	pluginInfo PluginInfo
 	collect    CollectFunc
+	spec       Spec
 }
 
 var registry []registration
@@ -18,11 +19,29 @@ var registry []registration
 //   - PluginInfo: metadata about a plugin
 //   - Defaults: config passed to the collect function
 //   - Collect: the main function that creates entries
-func Register[T any](pluginInfo PluginInfo, defaults T, collect func(cfg T) (Entries, error)) {
-	registry = append(registry, registration{
+//   - Spec(optional): defines the mapping for the stream server to state changes in the snapshots
+func Register[T any](pluginInfo PluginInfo, defaults T, collect func(cfg T) (Entries, error), spec ...Spec) {
+	r := registration{
 		pluginInfo: pluginInfo,
 		collect:    addPluginConfig(collect, defaults),
-	})
+	}
+	if len(spec) > 0 {
+		r.spec = spec[0]
+	}
+	registry = append(registry, r)
+}
+
+type Manifest struct {
+	Plugin PluginInfo `json:"plugin"`
+	Spec   Spec       `json:"spec,omitempty"`
+}
+
+func Manifests() []Manifest {
+	ms := make([]Manifest, 0, len(registry))
+	for _, r := range registry {
+		ms = append(ms, Manifest{Plugin: r.pluginInfo, Spec: r.spec})
+	}
+	return ms
 }
 
 // addPluginConfig wraps around a plugin to decode and pass in thw json config, so the collect method
